@@ -1,9 +1,17 @@
 build:
   nodes:
-    analysis:
+    my-tests:
       environment:
         php:
-          version: 7.4
+          version: 7.3  # or any other released version
+      cache:
+        disabled: false
+        directories:
+          - ~/.composer/cache
+
+  dependencies:
+    override:
+      - composer install --ignore-platform-reqs --no-interaction
 
 build_failure_conditions:
   - 'elements.rating(<= C).new.exists'                        # No new classes/methods with a rating of C or worse allowed

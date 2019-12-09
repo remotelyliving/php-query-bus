@@ -1,6 +1,6 @@
 {
     "name": "remotelyliving/php-query-bus",
-    "description": "A php library for abstracting querying, data loading, and graph building",
+    "description": "A php query bus for abstracting querying, data loading, and graph building",
     "keywords": ["query bus", "query", "bus", "graph"],
     "type": "library",
     "license": "MIT",
@@ -17,7 +17,6 @@
         "ext-filter": "*",
         "ext-mbstring": "*",
         "psr/log": "^1.0",
-        "symfony/event-dispatcher": "^5.0",
         "psr/container": "^1.0",
         "myclabs/php-enum": "^1.7",
         "psr/cache": "^1.0"
