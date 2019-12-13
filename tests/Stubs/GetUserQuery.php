@@ -28,7 +28,7 @@ class GetUserQuery implements Interfaces\Query
         return $this->userId;
     }
 
-    public function addUserProfile(): self
+    public function includeProfile(): self
     {
         $this->shouldGetProfile = true;
         return $this;

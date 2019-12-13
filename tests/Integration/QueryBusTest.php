@@ -40,7 +40,7 @@ EOT;
     public function testCompositeResult(): void
     {
         $query = new Stubs\GetUserQuery('uuid');
-        $query->addUserProfile();
+        $query->includeProfile();
 
         /** @var \RemotelyLiving\PHPQueryBus\Tests\Stubs\GetUserResult $result */
         $result = $this->queryBus->handle($query);

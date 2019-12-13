@@ -60,7 +60,7 @@ class GetUserQuery implements Interfaces\Query
     /**
      * @var bool
      */
-    private $shouldGetProfile = false;
+    private $shouldIncludeProfile = false;
 
     /**
      * @var string
@@ -77,15 +77,15 @@ class GetUserQuery implements Interfaces\Query
         return $this->userId;
     }
 
-    public function addUserProfile(): self
+    public function includeProfile(): self
     {
-        $this->shouldGetProfile = true;
+        $this->shouldIncludeProfile = true;
         return $this;
     }
 
     public function getGetUserProfileQuery(): ?GetUserProfileQuery
     {
-        return ($this->shouldGetProfile)
+        return ($this->shouldIncludeProfile)
             ? new GetUserProfileQuery($this->userId)
             : null;
     }
