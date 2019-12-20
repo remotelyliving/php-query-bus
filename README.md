@@ -114,7 +114,7 @@ class GetUserResult implements Result
      */
     private $userProfileResult;
 
-    public function __construct(?\stdClass $user, GetUserProfileResult $userProfileResult = null)
+    public function __construct(?\stdClass $user, ?GetUserProfileResult $userProfileResult = null)
     {
         $this->user = $user;
         $this->userProfileResult = $userProfileResult;
