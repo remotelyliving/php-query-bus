@@ -8,10 +8,7 @@ use RemotelyLiving\PHPQueryBus\Interfaces;
 
 final class QueryBus implements Interfaces\QueryBus
 {
-    /**
-     * @var \RemotelyLiving\PHPQueryBus\Interfaces\Resolver
-     */
-    private $resolver;
+    private Interfaces\Resolver $resolver;
 
     /**
      * @var callable

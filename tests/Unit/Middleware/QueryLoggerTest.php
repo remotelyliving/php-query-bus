@@ -4,80 +4,62 @@ declare(strict_types=1);
 
 namespace RemotelyLiving\PHPQueryBus\Tests\Unit\Middleware;
 
-use RemotelyLiving\PHPQueryBus\Interfaces\Query;
-use RemotelyLiving\PHPQueryBus\Interfaces\Result;
-use RemotelyLiving\PHPQueryBus\Middleware\QueryLogger;
-use RemotelyLiving\PHPQueryBus\Tests\Stubs\GetUserProfileQuery;
-use RemotelyLiving\PHPQueryBus\Tests\Stubs\GetUserQuery;
+use Psr\Log\Test\TestLogger;
+use RemotelyLiving\PHPQueryBus\AbstractResult;
+use RemotelyLiving\PHPQueryBus\Interfaces;
+use RemotelyLiving\PHPQueryBus\Middleware;
+use RemotelyLiving\PHPQueryBus\Tests\Stubs;
 use RemotelyLiving\PHPQueryBus\Tests\Unit\AbstractTestCase;
 
 class QueryLoggerTest extends AbstractTestCase
 {
-    /**
-     * @var \Psr\Log\Test\TestLogger
-     */
-    private $testLogger;
+    private TestLogger $testLogger;
 
-    /**
-     * @var \RemotelyLiving\PHPQueryBus\Interfaces\LoggableQuery
-     */
-    private $loggableQuery;
+    private Interfaces\LoggableQuery $loggableQuery;
 
-    /**
-     * @var \RemotelyLiving\PHPQueryBus\Interfaces\Query
-     */
-    private $nonLoggableQuery;
+    private Interfaces\Query $nonLoggableQuery;
 
-    /**
-     * @var \RemotelyLiving\PHPQueryBus\Interfaces\Result
-     */
-    private $result;
+    private Interfaces\Result $result;
 
-    /**
-     * @var callable
-     */
-    private $next;
+    private \Closure $next;
 
-    /**
-     * @var callable
-     */
-    private $queryLogger;
+    private Middleware\QueryLogger $queryLogger;
 
     protected function setUp(): void
     {
         $this->testLogger = $this->createTestLogger();
-        $this->loggableQuery = new GetUserProfileQuery('uuid');
-        $this->nonLoggableQuery = new GetUserQuery('uuid');
-        $this->result = new class implements Result {
-            public function jsonSerialize()
+        $this->loggableQuery = new Stubs\GetUserProfileQuery('uuid');
+        $this->nonLoggableQuery = new Stubs\GetUserQuery('uuid');
+        $this->result = new class extends AbstractResult {
+            public function toArray(): array
             {
                 return [];
             }
         };
 
-        $this->next = function (Query $query): Result {
+        $this->next = function (): Interfaces\Result {
             return $this->result;
         };
 
-        $this->queryLogger = new QueryLogger();
+        $this->queryLogger = new Middleware\QueryLogger();
         $this->queryLogger->setLogger($this->testLogger);
     }
 
     public function testDoesNotLogNonLoggableQueries(): void
     {
         $result = ($this->queryLogger)($this->nonLoggableQuery, $this->next);
-        $this->assertInstanceOf(Result::class, $result);
+        $this->assertEquals($this->result, $result);
         $this->assertEmpty($this->testLogger->records);
     }
 
     public function testLogsLoggableQueries(): void
     {
         $result = ($this->queryLogger)($this->loggableQuery, $this->next);
-        $this->assertInstanceOf(Result::class, $result);
+        $this->assertEquals($this->result, $result);
         $this->assertSame([
-            'level' => GetUserProfileQuery::LOG_LEVEL,
-            'message' => GetUserProfileQuery::LOG_MESSAGE,
-            'context' => GetUserProfileQuery::LOG_CONTEXT,
+            'level' => Stubs\GetUserProfileQuery::LOG_LEVEL,
+            'message' => Stubs\GetUserProfileQuery::LOG_MESSAGE,
+            'context' => Stubs\GetUserProfileQuery::LOG_CONTEXT,
         ], $this->testLogger->records[0]);
     }
 }

@@ -4,102 +4,86 @@ declare(strict_types=1);
 
 namespace RemotelyLiving\PHPQueryBus\Tests\Unit\Middleware;
 
-use Psr\Cache\CacheItemInterface;
-use Psr\Cache\CacheItemPoolInterface;
-use RemotelyLiving\PHPQueryBus\Interfaces\Query;
-use RemotelyLiving\PHPQueryBus\Interfaces\Result;
-use RemotelyLiving\PHPQueryBus\Middleware\QueryCacher;
-use RemotelyLiving\PHPQueryBus\Tests\Stubs\GetUserProfileQuery;
-use RemotelyLiving\PHPQueryBus\Tests\Stubs\GetUserQuery;
+use Psr\Cache as PSRCache;
+use RemotelyLiving\PHPQueryBus\AbstractResult;
+use RemotelyLiving\PHPQueryBus\DTO;
+use RemotelyLiving\PHPQueryBus\Interfaces;
+use RemotelyLiving\PHPQueryBus\Middleware;
+use RemotelyLiving\PHPQueryBus\Tests\Stubs;
 use RemotelyLiving\PHPQueryBus\Tests\Unit\AbstractTestCase;
 
 class QueryCacherTest extends AbstractTestCase
 {
-    /**
-     * @var \Psr\Cache\CacheItemPoolInterface
-     */
-    private $cachePool;
+    private PSRCache\CacheItemPoolInterface $cachePool;
 
-    /**
-     * @var \Psr\Cache\CacheItemInterface
-     */
-    private $cacheItem;
+    private PSRCache\CacheItemInterface $cacheItem;
 
-    /**
-     * @var \RemotelyLiving\PHPQueryBus\Interfaces\CacheableQuery
-     */
-    private $cacheableQuery;
+    private Interfaces\CacheableQuery $cacheableQuery;
 
-    /**
-     * @var \RemotelyLiving\PHPQueryBus\Interfaces\Query
-     */
-    private $nonCacheableQuery;
+    private Interfaces\Query $nonCacheableQuery;
 
-    /**
-     * @var \RemotelyLiving\PHPQueryBus\Interfaces\Result
-     */
-    private $result;
+    private Interfaces\Result $result;
 
-    /**
-     * @var callable
-     */
-    private $next;
+    private DTO\Cache\ResultWrapper $resultWrapper;
 
-    /**
-     * @var callable
-     */
-    private $queryCacher;
+    private \Closure $next;
+
+    private Middleware\QueryCacher $queryCacher;
 
     protected function setUp(): void
     {
-        $this->cachePool = $this->createMock(CacheItemPoolInterface::class);
-        $this->cacheItem = $this->createMock(CacheItemInterface::class);
-
-        $this->cacheableQuery = new GetUserProfileQuery('uuid');
-        $this->nonCacheableQuery = new GetUserQuery('uuid');
-        $this->result = new class implements Result {
-            public function jsonSerialize(): array
+        $this->cachePool = $this->createMock(PSRCache\CacheItemPoolInterface::class);
+        $this->cacheItem = $this->createMock(PSRCache\CacheItemInterface::class);
+        $this->cacheableQuery = new Stubs\GetUserProfileQuery('uuid');
+        $this->nonCacheableQuery = new Stubs\GetUserQuery('uuid');
+        $this->result = new class extends AbstractResult {
+            public function toArray(): array
             {
                 return [];
             }
         };
 
-        $this->next = function (Query $query): Result {
+        $this->next = function (): Interfaces\Result {
             return $this->result;
         };
 
-        $this->queryCacher = new QueryCacher($this->cachePool);
+        $this->resultWrapper = DTO\Cache\ResultWrapper::wrap($this->result, 10, 300);
+        $this->queryCacher = new Middleware\QueryCacher($this->cachePool);
     }
 
-    public function testDoesNotCacheNonCacheableeQueries(): void
+    public function testDoesNotCacheNonCacheableQueries(): void
     {
         $this->cachePool->expects($this->never())
             ->method('getItem');
 
         $result = ($this->queryCacher)($this->nonCacheableQuery, $this->next);
-        $this->assertInstanceOf(Result::class, $result);
+
+        $this->assertEquals($this->result, $result);
     }
 
-    public function testDoesGetCacheableQueriesFromCache(): void
+    public function testDoesGetCacheableQueriesAlreadyInCache(): void
     {
         $this->cachePool->method('getItem')
-            ->with(GetUserProfileQuery::CACHE_KEY)
+            ->with(Stubs\GetUserProfileQuery::CACHE_KEY)
             ->willReturn($this->cacheItem);
+
+        $this->cachePool->method('save');
 
         $this->cacheItem->method('isHit')
             ->willReturn(true);
 
         $this->cacheItem->method('get')
-            ->willReturn($this->result);
+            ->willReturn($this->resultWrapper);
 
         $result = ($this->queryCacher)($this->cacheableQuery, $this->next);
-        $this->assertInstanceOf(Result::class, $result);
+
+        $this->assertEquals($this->result, $result);
     }
 
     public function testDoesGetCacheableQueriesFromCacheAndPopulatesCacheIfMissing(): void
     {
         $this->cachePool->method('getItem')
-            ->with(GetUserProfileQuery::CACHE_KEY)
+            ->with(Stubs\GetUserProfileQuery::CACHE_KEY)
             ->willReturn($this->cacheItem);
 
         $this->cachePool->expects($this->once())
@@ -110,17 +94,113 @@ class QueryCacherTest extends AbstractTestCase
             ->willReturn(false);
 
         $this->cacheItem->method('set')
-            ->with($this->result)
+            ->with(DTO\Cache\ResultWrapper::wrap($this->result, 0, $this->cacheableQuery->getTTL()))
             ->willReturn($this->cacheItem);
 
         $this->cacheItem->method('expiresAfter')
-            ->with(GetUserProfileQuery::CACHE_TTL)
+            ->with(Stubs\GetUserProfileQuery::CACHE_TTL)
             ->willReturn($this->cacheItem);
 
         $this->cacheItem->method('get')
-            ->willReturn($this->result);
+          ->willReturn($this->resultWrapper);
 
         $result = ($this->queryCacher)($this->cacheableQuery, $this->next);
-        $this->assertInstanceOf(Result::class, $result);
+
+        $this->assertEquals($this->result, $result);
+    }
+
+    public function testForceReloadsItemInCacheIfShouldReloadIsTrueInQuery(): void
+    {
+        $this->cacheableQuery = new class ('uuid') extends Stubs\GetUserProfileQuery {
+            public function shouldRecomputeResult(): bool
+            {
+                return true;
+            }
+        };
+
+        $this->cachePool->method('getItem')
+          ->with(Stubs\GetUserProfileQuery::CACHE_KEY)
+          ->willReturn($this->cacheItem);
+
+        $this->cachePool->expects($this->once())
+          ->method('save')
+          ->with($this->cacheItem);
+
+        $this->cacheItem->method('isHit')
+          ->willReturn(true);
+
+        $this->cacheItem->method('set')
+          ->with(DTO\Cache\ResultWrapper::wrap($this->result, 0, $this->cacheableQuery->getTTL()))
+          ->willReturn($this->cacheItem);
+
+        $this->cacheItem->method('expiresAfter')
+          ->with(Stubs\GetUserProfileQuery::CACHE_TTL)
+          ->willReturn($this->cacheItem);
+
+        $this->cacheItem->method('get')
+          ->willReturn($this->resultWrapper);
+
+        $result = ($this->queryCacher)($this->cacheableQuery, $this->next);
+
+        $this->assertEquals($this->result, $result);
+    }
+
+    public function testForceReloadsItemInCacheIfUnserializedCacheEntryIsCorrupt(): void
+    {
+        $this->cachePool->method('getItem')
+          ->with(Stubs\GetUserProfileQuery::CACHE_KEY)
+          ->willReturn($this->cacheItem);
+
+        $this->cachePool->expects($this->once())
+          ->method('save')
+          ->with($this->cacheItem);
+
+        $this->cacheItem->method('isHit')
+          ->willReturn(true);
+
+        $this->cacheItem->method('set')
+          ->with(DTO\Cache\ResultWrapper::wrap($this->result, 0, $this->cacheableQuery->getTTL()))
+          ->willReturn($this->cacheItem);
+
+        $this->cacheItem->method('expiresAfter')
+          ->with(Stubs\GetUserProfileQuery::CACHE_TTL)
+          ->willReturn($this->cacheItem);
+
+        $this->cacheItem->method('get')
+          ->willReturn(new \__PHP_Incomplete_Class()); // when unserialization fails
+
+        $result = ($this->queryCacher)($this->cacheableQuery, $this->next);
+
+        $this->assertEquals($this->result, $result);
+    }
+
+    public function testForceReloadsItemInCacheIfItWillExpireSoon(): void
+    {
+        $this->resultWrapper = DTO\Cache\ResultWrapper::wrap($this->result, 20, 0);
+        $this->cachePool->method('getItem')
+          ->with(Stubs\GetUserProfileQuery::CACHE_KEY)
+          ->willReturn($this->cacheItem);
+
+        $this->cachePool->expects($this->once())
+          ->method('save')
+          ->with($this->cacheItem);
+
+        $this->cacheItem->method('isHit')
+          ->willReturn(true);
+
+        $this->cacheItem->method('set')
+          ->with(DTO\Cache\ResultWrapper::wrap($this->result, 0, $this->cacheableQuery->getTTL()))
+          ->willReturn($this->cacheItem);
+
+        $this->cacheItem->method('expiresAfter')
+          ->with(Stubs\GetUserProfileQuery::CACHE_TTL)
+          ->willReturn($this->cacheItem);
+
+        $this->cacheItem->method('get')
+          ->willReturn($this->resultWrapper);
+
+        $result = ($this->queryCacher)($this->cacheableQuery, $this->next);
+
+        $this->assertEquals($this->result, $result);
     }
 }

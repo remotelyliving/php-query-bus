@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace RemotelyLiving\PHPQueryBus\Tests\Stubs;
 
-use RemotelyLiving\PHPQueryBus\Interfaces\CacheableQuery;
-use RemotelyLiving\PHPQueryBus\Interfaces\LoggableQuery;
-use RemotelyLiving\PHPQueryBus\Enums\LogLevel;
+use MyCLabs\Enum\Enum;
+use RemotelyLiving\PHPQueryBus\Interfaces;
+use RemotelyLiving\PHPQueryBus\Enums;
 
-class GetUserProfileQuery implements LoggableQuery, CacheableQuery
+class GetUserProfileQuery implements Interfaces\LoggableQuery, Interfaces\CacheableQuery
 {
     public const LOG_CONTEXT = ['foo' => 'bar'];
     public const LOG_MESSAGE = 'User profile retrieved';
@@ -17,14 +17,26 @@ class GetUserProfileQuery implements LoggableQuery, CacheableQuery
     public const CACHE_TTL = 123;
     public const CACHE_KEY = 'cacheKey';
 
-    /**
-     * @var string
-     */
-    private $userId;
+    private string $userId;
+
+    private bool $handlerShouldReturnWithErrors = false;
 
     public function __construct(string $userId)
     {
         $this->userId = $userId;
+    }
+
+    public function handlerShouldReturnWithErrors(): self
+    {
+        $clone = clone $this;
+        $clone->handlerShouldReturnWithErrors = true;
+
+        return $clone;
+    }
+
+    public function shouldHandlerReturnWithErrors(): bool
+    {
+        return $this->handlerShouldReturnWithErrors;
     }
 
     public function getUserId(): string
@@ -37,9 +49,9 @@ class GetUserProfileQuery implements LoggableQuery, CacheableQuery
         return static::LOG_CONTEXT;
     }
 
-    public function getLogLevel(): LogLevel
+    public function getLogLevel(): Enums\LogLevel
     {
-        return new LogLevel(static::LOG_LEVEL);
+        return new Enums\LogLevel(static::LOG_LEVEL);
     }
 
     public function getLogMessage(): string
@@ -55,5 +67,10 @@ class GetUserProfileQuery implements LoggableQuery, CacheableQuery
     public function getCacheKey(): string
     {
         return static::CACHE_KEY;
+    }
+
+    public function shouldRecomputeResult(): bool
+    {
+        return false;
     }
 }

@@ -4,28 +4,18 @@ declare(strict_types=1);
 
 namespace RemotelyLiving\PHPQueryBus\Tests\Unit;
 
-use RemotelyLiving\PHPQueryBus;
 use RemotelyLiving\PHPQueryBus\Exceptions;
+use RemotelyLiving\PHPQueryBus\Interfaces;
 use RemotelyLiving\PHPQueryBus\Resolver;
 use RemotelyLiving\PHPQueryBus\Tests\Stubs;
 
 class ResolverTest extends AbstractTestCase
 {
+    private Stubs\Container $emptyContainer;
 
-    /**
-     * @var \RemotelyLiving\PHPQueryBus\Tests\Stubs\Container
-     */
-    private $emptyContainer;
+    private Stubs\Container $containerWithUserQuerySet;
 
-    /**
-     * @var \RemotelyLiving\PHPQueryBus\Tests\Stubs\Container
-     */
-    private $containerWithUserQuerySet;
-
-    /**
-     * @var \RemotelyLiving\PHPQueryBus\Interfaces\Resolver
-     */
-    private $resolver;
+    private Interfaces\Resolver $resolver;
 
     protected function setUp(): void
     {

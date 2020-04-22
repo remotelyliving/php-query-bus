@@ -4,52 +4,32 @@ declare(strict_types=1);
 
 namespace RemotelyLiving\PHPQueryBus\Tests\Unit;
 
-use RemotelyLiving\PHPQueryBus;
+use RemotelyLiving\PHPQueryBus\AbstractResult;
 use RemotelyLiving\PHPQueryBus\Interfaces;
 use RemotelyLiving\PHPQueryBus\QueryBus;
 
 class QueryBusTest extends AbstractTestCase
 {
-    /**
-     * @var \PHPUnit\Framework\MockObject\MockObject|\RemotelyLiving\PHPQueryBus\Interfaces\Resolver
-     */
-    private $resolver;
+    private Interfaces\Resolver $resolver;
 
-    /**
-     * @var \RemotelyLiving\PHPQueryBus\QueryBus
-     */
-    private $queryBus;
+    private QueryBus $queryBus;
 
-    /**
-     * @var \RemotelyLiving\PHPQueryBus\Interfaces\Result
-     */
-    private $result;
+    private Interfaces\Result $result;
 
-    /**
-     * @var \RemotelyLiving\PHPQueryBus\Interfaces\Query
-     */
-    private $query;
+    private Interfaces\Query $query;
 
-    /**
-     * @var \RemotelyLiving\PHPQueryBus\Interfaces\Handler
-     */
-    private $handler;
+    private Interfaces\Handler $handler;
 
     protected function setUp(): void
     {
         $this->resolver = $this->createMock(Interfaces\Resolver::class);
         $this->queryBus = QueryBus::create($this->resolver);
-        $this->result = new class implements Interfaces\Result {
-            public function jsonSerialize()
-            {
-                ['foo' => 'bar'];
-            }
+        $this->result = new class extends AbstractResult {
         };
-
         $this->query = new class implements Interfaces\Query {
         };
         $this->handler = new class ($this->result) implements Interfaces\Handler {
-            private $expectedResult;
+            private Interfaces\Result $expectedResult;
 
             public function __construct(Interfaces\Result $result)
             {
@@ -70,6 +50,7 @@ class QueryBusTest extends AbstractTestCase
             ->willReturn($this->handler);
 
         $this->assertSame($this->result, $this->queryBus->handle($this->query));
+        $this->assertFalse($this->queryBus->handle($this->query)->isNotFound());
     }
 
     public function testPushesMiddlewareLIFO(): void

@@ -4,28 +4,21 @@ declare(strict_types=1);
 
 namespace RemotelyLiving\PHPQueryBus\Tests\Stubs;
 
-use RemotelyLiving\PHPQueryBus\Interfaces\Result;
+use RemotelyLiving\PHPQueryBus\AbstractResult;
 
-class GetUserResult implements Result
+class GetUserResult extends AbstractResult
 {
+    private \stdClass $user;
 
-    /**
-     * @var \stdClass|null
-     */
-    private $user;
+    private ?GetUserProfileResult $userProfileResult;
 
-    /**
-     * @var \RemotelyLiving\PHPQueryBus\Tests\Stubs\GetUserProfileResult|null
-     */
-    private $userProfileResult;
-
-    public function __construct(?\stdClass $user, GetUserProfileResult $userProfileResult = null)
+    public function __construct(\stdClass $user, GetUserProfileResult $userProfileResult = null)
     {
         $this->user = $user;
         $this->userProfileResult = $userProfileResult;
     }
 
-    public function getUser(): ?\stdClass
+    public function getUser(): \stdClass
     {
         return $this->user;
     }
@@ -33,13 +26,5 @@ class GetUserResult implements Result
     public function getUserProfileResult(): ?GetUserProfileResult
     {
         return $this->userProfileResult;
-    }
-
-    public function jsonSerialize(): array
-    {
-        return [
-            'user' => $this->getUser(),
-            'profile' => $this->getUserProfileResult(),
-        ];
     }
 }

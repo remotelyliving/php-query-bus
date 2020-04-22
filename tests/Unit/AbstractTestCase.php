@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace RemotelyLiving\PHPQueryBus\Tests\Unit;
 
-use PHPUnit\Framework\TestCase;
-use Psr\Log\Test\TestLogger;
+use PHPUnit;
+use Psr\Log;
 
-abstract class AbstractTestCase extends TestCase
+abstract class AbstractTestCase extends PHPUnit\Framework\TestCase
 {
-    public function createTestLogger(): TestLogger
+    public function createTestLogger(): Log\Test\TestLogger
     {
-        return new TestLogger();
+        return new Log\Test\TestLogger();
     }
 }

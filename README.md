@@ -4,7 +4,7 @@
 [![License](https://poser.pugx.org/remotelyliving/php-query-bus/license)](https://packagist.org/packages/remotelyliving/php-query-bus)
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/remotelyliving/php-query-bus/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/remotelyliving/php-query-bus/?branch=master)
 
-# php-query-bus: A Query Bus Implementation For PHP
+# php-query-bus: 🚍 A Query Bus Implementation For PHP 🚍
 
 ### Use Cases
 
@@ -12,7 +12,7 @@ If you want a light weight compliment to your Command Bus for CQRS, hopefully th
 It's very similar to a Command Bus, but it returns a Result. 
 
 I've used magical data loading solutions before, but good old fashioned set of specific Query, Result, and Handler objects for a given Use Case
-is generally more performant, predictable, and explicit than array or magic-based implementations. 
+is generally more performant, predictable, and explicit than magic-based implementations. 
 
 ### Installation
 
@@ -44,28 +44,23 @@ $query = new MyQuery1('id');
 $result = $queryBus->handle($result);
 ```
 
+Middleware is any callable that returns a Result. Some base middleware is included: [src/Middleware](https://github.com/remotelyliving/php-query-bus/tree/master/src/Middleware)
+
 That's really all there is to it!
 
 ### Query
 
 The DTO's for this library are left intentionally unimplemented. They are just interfaces to implement.
-Eventually all magic breaks down somewhere and I'm not providing any here. My suggestion for Query objects
-is to keep them as a DTO of what you need to query your data source by. 
+My suggestion for Query objects is to keep them as a DTO of what you need to query your data source by. 
 
 An example query might look like this:
 
 ```php
 class GetUserQuery implements Interfaces\Query
 {
-    /**
-     * @var bool
-     */
-    private $shouldIncludeProfile = false;
+    private bool $shouldIncludeProfile = false;
 
-    /**
-     * @var string
-     */
-    private $userId;
+    private string $userId;
 
     public function __construct(string $userId)
     {
@@ -82,13 +77,6 @@ class GetUserQuery implements Interfaces\Query
         $this->shouldIncludeProfile = true;
         return $this;
     }
-
-    public function getGetUserProfileQuery(): ?GetUserProfileQuery
-    {
-        return ($this->shouldIncludeProfile)
-            ? new GetUserProfileQuery($this->userId)
-            : null;
-    }
 }
 ```
 
@@ -96,45 +84,37 @@ As you can see, it's just a few getters and option builder.
 
 ### Result
 
-The Result is similarly unimplemented. 
-Results must implement `\JsonSerializable` but that's about it.
-They can have their own custom getters for your use case. An example Result for the `GetUserQuery` above might look like:
+The Result is similarly unimplemented except for the provided [AbstractResult](https://github.com/remotelyliving/php-query-bus/blob/master/src/AbstractResult.php).
+Results can have their own custom getters for your use case. An example Result for the `GetUserQuery` above might look like:
 
 ```php
-class GetUserResult implements Result
+class GetUserResult extends \RemotelyLiving\PHPQueryBus\AbstractResult implements \JsonSerializable
 {
+    private User $user;
 
-    /**
-     * @var \stdClass|null
-     */
-    private $user;
+    private ?UserProfile $userProfile;
 
-    /**
-     * @var \RemotelyLiving\PHPQueryBus\Tests\Stubs\GetUserProfileResult|null
-     */
-    private $userProfileResult;
-
-    public function __construct(?\stdClass $user, ?GetUserProfileResult $userProfileResult = null)
+    public function __construct(User $user, ?UserProfile $userProfile)
     {
         $this->user = $user;
-        $this->userProfileResult = $userProfileResult;
+        $this->userProfileResult = $userProfile;
     }
 
-    public function getUser(): ?\stdClass
+    public function getUser(): User
     {
         return $this->user;
     }
 
-    public function getUserProfileResult(): ?GetUserProfileResult
+    public function getUserProfile(): ?UserProfile
     {
-        return $this->userProfileResult;
+        return $this->userProfile;
     }
 
     public function jsonSerialize(): array
     {
         return [
             'user' => $this->getUser(),
-            'profile' => $this->getUserProfileResult(),
+            'profile' => $this->getUserProfile(),
         ];
     }
 }
@@ -144,27 +124,45 @@ As you can see, it's not too hard to start building Result graphs for outputting
 
 ### Handler
 
-The handlers are where the magic happens. Inject what ever repository or ORM you need to load data.
+The handlers are where the magic happens. Inject what ever repository, API Client, or ORM you need to load data.
 It will ask the query for query parameters and return a result. You can also request other query results inside a handler from the bus.
 Going with our GetUserQuery example, a Handler could look like:
 
 ```php
-class GetUserHandler implements Handler
+class GetUserHandler implements Interfaces\Handler
 {
-    public function handle(Query $query, QueryBus $bus): Result
+    public function handle(Interfaces\Query $query, Interfaces\QueryBus $bus): Interfaces\Result
     {
-        $user = $this->userRepository->getUserById($query->getUserId());
+        try {
+            $user = $this->userRepository->getUserById($query->getUserId());
+        } catch (ConnectectionError $e) {
+            // can handle exceptions without blowing up and instead use messaging via
+            // AbstractResult::getErrors() and AbstractResultHasErrors()
+            return AbstractResult::withErrors($e);
+        }
 
-        return ($query->getGetUserProfileQuery())
-            ? new GetUserResult($user, $bus->handle($query->getGetUserProfileQuery()))
-            : new GetUserResult($user);
+        
+        if (!$user) {
+            // can handle nullish cases by returning not found
+            return AbstractResult::notFound();
+        }
+       
+        if (!$query->shouldIncludeProfile()) {
+            return new GetUserResult($user, null);
+        }
+
+        $profileResult = $bus->handle(new GetUserProfileQuery($query->getUserId()));
+
+        return ($profileResult->isNotFound())
+            ? new GetUserResult($user, null)
+            : new GetUserResult($user, $profileResult->getUserProfile());
     }
 }
 ```
 
 ### Middleware
 
-There are a few middleware that this library ships with. Take a look and see if any are worth pushing on to the stack.
+There are a few [Middleware](https://github.com/remotelyliving/php-query-bus/tree/master/src/Middleware) that this library ships with.
 The default execution order is LIFO and the signature very simple.
 
 A Middleware must return an instance of Result and be callable. That's it!
@@ -172,14 +170,28 @@ A Middleware must return an instance of Result and be callable. That's it!
 An example Middleware could be as simple as this:
 
 ```php
-$cachingMiddleware = function (Query $query, callable $next) use ($queryCacher) : Result {
-    if ($query instanceof CacheableQuery) {
+$cachingMiddleware = function (Interfaces\Query $query, callable $next) use ($queryCacher) : Interfaces\Result {
+    if ($query instanceof Interfaces\CacheableQuery) {
         return $queryCacher->get($query, function () use ($next, $query) { return $next($query); });
     }
    
     return $next($query);
 };
 ```
+
+#### [QueryCacher](https://github.com/remotelyliving/php-query-bus/blob/master/src/Middleware/QueryCacher.php)
+This middleware provides some interesting query caching by utilizing [Probabilistic Early Cache Expiry](https://en.wikipedia.org/wiki/Cache_stampede#Probabilistic_early_expiration)
+to help prevent cache stampedes. To be cached, a Query must implement the [CacheableQuery](https://github.com/remotelyliving/php-query-bus/blob/master/src/Interfaces/CacheableQuery.php) interface.
+To recompute cache simply fire off a Query with the value of `CacheableQuery::shouldReloadResult()` returning true.
+
+#### [QueryLogger](https://github.com/remotelyliving/php-query-bus/blob/master/src/Middleware/QueryLogger.php)
+Helpful for debugging, but best left for dev and stage environments.
+
+#### [ResultErrorLogger](https://github.com/remotelyliving/php-query-bus/blob/master/src/Middleware/ResultErrorLogger.php)
+Helpful for debugging and alerting based on your logging setup.
+
+#### [PerfBudgetLogger](https://github.com/remotelyliving/php-query-bus/blob/master/src/Middleware/QueryLogger.php)
+Allows you to set certain rough performance thresholds and log with something has gone over that threshold.
 
 ### Future Future Development
 

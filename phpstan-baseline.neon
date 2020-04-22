@@ -1,0 +1,12 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Parameter \\#2 \\$allowed_classes of function unserialize expects array\\(\\)\\|array\\('allowed_classes' \\=\\> array\\<string\\>\\|bool\\), array given\\.$#"
+			count: 1
+			path: src/DTO/Cache/ResultWrapper.php
+
+		-
+			message: "#^Class RemotelyLiving\\\\PHPQueryBus\\\\Enums\\\\LogLevel extends generic class MyCLabs\\\\Enum\\\\Enum but does not specify its types\\: T$#"
+			count: 1
+			path: src/Enums/LogLevel.php
+

@@ -4,19 +4,13 @@ declare(strict_types=1);
 
 namespace RemotelyLiving\PHPQueryBus\Tests\Stubs;
 
-use RemotelyLiving\PHPQueryBus\Interfaces\Result;
+use RemotelyLiving\PHPQueryBus\AbstractResult;
 
-class GetUserProfileResult implements Result
+class GetUserProfileResult extends AbstractResult
 {
-    /**
-     * @var array
-     */
-    private $preferences;
+    private array $preferences;
 
-    /**
-     * @var string
-     */
-    private $username;
+    private string $username;
 
     public function __construct(array $preferences, string $username)
     {
@@ -32,13 +26,5 @@ class GetUserProfileResult implements Result
     public function getUsername(): string
     {
         return $this->username;
-    }
-
-    public function jsonSerialize(): array
-    {
-        return [
-            'preferences' => $this->getPreferences(),
-            'username' => $this->getUsername(),
-        ];
     }
 }

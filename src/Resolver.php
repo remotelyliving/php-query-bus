@@ -10,20 +10,17 @@ use RemotelyLiving\PHPQueryBus\Interfaces;
 
 final class Resolver implements Interfaces\Resolver
 {
-    /**
-     * @var \Psr\Container\ContainerInterface|null
-     */
-    private $container;
+    private ?ContainerInterface $container;
 
     /**
      * @var \RemotelyLiving\PHPQueryBus\Interfaces\Handler[]
      */
-    private $map = [];
+    private array $map = [];
 
     /**
      * @var callable[]
      */
-    private $deferred = [];
+    private array $deferred = [];
 
     public function __construct(ContainerInterface $container = null)
     {

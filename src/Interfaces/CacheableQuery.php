@@ -8,5 +8,7 @@ interface CacheableQuery extends Query
 {
     public function getCacheKey(): string;
 
+    public function shouldRecomputeResult(): bool;
+
     public function getTTL(): int;
 }

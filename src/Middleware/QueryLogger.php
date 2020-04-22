@@ -4,18 +4,17 @@ declare(strict_types=1);
 
 namespace RemotelyLiving\PHPQueryBus\Middleware;
 
-use RemotelyLiving\PHPQueryBus\Interfaces\LoggableQuery;
-use RemotelyLiving\PHPQueryBus\Interfaces\Query;
-use RemotelyLiving\PHPQueryBus\Interfaces\Result;
-use RemotelyLiving\PHPQueryBus\Traits\Logger;
+use Psr\Log;
+use RemotelyLiving\PHPQueryBus\Interfaces;
+use RemotelyLiving\PHPQueryBus\Traits;
 
-final class QueryLogger implements \Psr\Log\LoggerAwareInterface
+final class QueryLogger implements Log\LoggerAwareInterface
 {
-    use Logger;
+    use Traits\Logger;
 
-    public function __invoke(Query $query, callable $next): Result
+    public function __invoke(Interfaces\Query $query, callable $next): Interfaces\Result
     {
-        if ($query instanceof LoggableQuery) {
+        if ($query instanceof Interfaces\LoggableQuery) {
             $this->getLogger()->log((string) $query->getLogLevel(), $query->getLogMessage(), $query->getLogContext());
         }
 

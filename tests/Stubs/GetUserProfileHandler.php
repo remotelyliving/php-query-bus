@@ -4,18 +4,23 @@ declare(strict_types=1);
 
 namespace RemotelyLiving\PHPQueryBus\Tests\Stubs;
 
-use RemotelyLiving\PHPQueryBus\Interfaces\Query;
-use RemotelyLiving\PHPQueryBus\Interfaces\Result;
-use RemotelyLiving\PHPQueryBus\Interfaces\Handler;
-use RemotelyLiving\PHPQueryBus\Interfaces\QueryBus;
+use RemotelyLiving\PHPQueryBus\AbstractResult;
+use RemotelyLiving\PHPQueryBus\Interfaces;
 
-class GetUserProfileHandler implements Handler
+class GetUserProfileHandler implements Interfaces\Handler
 {
     public const PREFERENCES = ['foo' => 'bar'];
     public const USERNAME = 'christian.thomas';
 
-    public function handle(Query $query, QueryBus $bus): Result
+    public function handle(Interfaces\Query $query, Interfaces\QueryBus $bus): Interfaces\Result
     {
+        if ($query->shouldHandlerReturnWithErrors()) {
+            return AbstractResult::withErrors(
+                new \LogicException('Something went really wrong'),
+                new \InvalidArgumentException('But seriously')
+            );
+        }
+
         return new GetUserProfileResult(static::PREFERENCES, static::USERNAME);
     }
 }

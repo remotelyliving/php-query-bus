@@ -7,6 +7,8 @@ namespace RemotelyLiving\PHPQueryBus\Enums;
 use MyCLabs\Enum\Enum;
 
 /**
+ * @psalm-immutable
+ *
  * @method static \RemotelyLiving\PHPQueryBus\Enums\LogLevel EMERGENCY()
  * @method static \RemotelyLiving\PHPQueryBus\Enums\LogLevel ALERT()
  * @method static \RemotelyLiving\PHPQueryBus\Enums\LogLevel CRITICAL()

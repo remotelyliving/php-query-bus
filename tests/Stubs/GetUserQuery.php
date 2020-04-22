@@ -8,15 +8,9 @@ use RemotelyLiving\PHPQueryBus\Interfaces;
 
 class GetUserQuery implements Interfaces\Query
 {
-    /**
-     * @var bool
-     */
-    private $shouldGetProfile = false;
+    private bool $shouldGetProfile = false;
 
-    /**
-     * @var string
-     */
-    private $userId;
+    private string $userId;
 
     public function __construct(string $userId)
     {

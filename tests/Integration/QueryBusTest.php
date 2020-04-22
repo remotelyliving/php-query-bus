@@ -4,15 +4,12 @@ declare(strict_types=1);
 
 namespace RemotelyLiving\PHPQueryBus\Tests\Integration;
 
+use RemotelyLiving\PHPQueryBus\QueryBus;
 use RemotelyLiving\PHPQueryBus\Tests\Stubs;
 
 class QueryBusTest extends AbstractTestCase
 {
-
-    /**
-     * @var \RemotelyLiving\PHPQueryBus\QueryBus
-     */
-    private $queryBus;
+    private QueryBus $queryBus;
 
     protected function setUp(): void
     {
@@ -26,15 +23,6 @@ class QueryBusTest extends AbstractTestCase
         $result = $this->queryBus->handle($query);
         $this->assertSame('uuid', $result->getUser()->id);
         $this->assertNull($result->getUserProfileResult());
-        $expectedJsonEncoding = <<<EOT
-{
-    "user": {
-        "id": "uuid"
-    },
-    "profile": null
-}
-EOT;
-        $this->assertSame($expectedJsonEncoding, json_encode($result, JSON_PRETTY_PRINT));
     }
 
     public function testCompositeResult(): void
@@ -53,19 +41,5 @@ EOT;
             Stubs\GetUserProfileHandler::PREFERENCES,
             $result->getUserProfileResult()->getPreferences()
         );
-        $expectedJsonEncoding = <<<EOT
-{
-    "user": {
-        "id": "uuid"
-    },
-    "profile": {
-        "preferences": {
-            "foo": "bar"
-        },
-        "username": "christian.thomas"
-    }
-}
-EOT;
-        $this->assertSame($expectedJsonEncoding, json_encode($result, JSON_PRETTY_PRINT));
     }
 }

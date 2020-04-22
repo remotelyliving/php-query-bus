@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace RemotelyLiving\PHPQueryBus\Tests\Traits\Unit;
+namespace RemotelyLiving\PHPQueryBus\Tests\Unit\Traits;
 
 use Psr\Log;
 use RemotelyLiving\PHPQueryBus\Tests\Unit\AbstractTestCase;
@@ -10,15 +10,9 @@ use RemotelyLiving\PHPQueryBus\Traits;
 
 class LoggerTest extends AbstractTestCase
 {
-    /**
-     * @var \Psr\Log\Test\TestLogger
-     */
-    private $testLogger;
+    private Log\Test\TestLogger $testLogger;
 
-    /**
-     * @var \Psr\Log\LoggerAwareInterface
-     */
-    private $loggableClass;
+    private Log\LoggerAwareInterface $loggableClass;
 
     protected function setUp(): void
     {

@@ -1,3 +1,4 @@
+.PHONY: dependencies, unit-tests, integration-tests, test-coverage, style-check, dependency-check, static-analysis, style-fix, repl
 build:
 	@make dependencies && make dependency-check && make static-analysis && make style-check && make unit-tests && make integration-tests
 
@@ -20,7 +21,7 @@ dependency-check:
 	@vendor/bin/composer-require-checker check -vvv ./composer.json
 
 static-analysis:
-	@vendor/bin/phpstan analyze --level=max ./src && ./vendor/bin/psalm --show-info=false
+	@vendor/bin/phpstan analyze && ./vendor/bin/psalm --show-info=false
 
 style-fix:
 	@vendor/bin/phpcbf --standard=PSR12 ./src ./tests

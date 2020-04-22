@@ -9,10 +9,7 @@ use Psr\Container\NotFoundExceptionInterface;
 
 class Container implements ContainerInterface
 {
-    /**
-     * @var array
-     */
-    private $services;
+    private array $services;
 
     public function __construct(array $services = [])
     {

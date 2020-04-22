@@ -4,14 +4,11 @@ declare(strict_types=1);
 
 namespace RemotelyLiving\PHPQueryBus\Tests\Stubs;
 
-use RemotelyLiving\PHPQueryBus\Interfaces\Query;
-use RemotelyLiving\PHPQueryBus\Interfaces\Result;
-use RemotelyLiving\PHPQueryBus\Interfaces\Handler;
-use RemotelyLiving\PHPQueryBus\Interfaces\QueryBus;
+use RemotelyLiving\PHPQueryBus\Interfaces;
 
-class GetUserHandler implements Handler
+class GetUserHandler implements Interfaces\Handler
 {
-    public function handle(Query $query, QueryBus $bus): Result
+    public function handle(Interfaces\Query $query, Interfaces\QueryBus $bus): Interfaces\Result
     {
         $user = new \stdClass();
         $user->id = $query->getUserId();

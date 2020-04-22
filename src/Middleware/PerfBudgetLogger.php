@@ -4,38 +4,32 @@ declare(strict_types=1);
 
 namespace RemotelyLiving\PHPQueryBus\Middleware;
 
-use RemotelyLiving\PHPQueryBus\Interfaces\Query;
-use RemotelyLiving\PHPQueryBus\Interfaces\Result;
-use RemotelyLiving\PHPQueryBus\Enums\LogLevel;
-use RemotelyLiving\PHPQueryBus\Traits\Logger;
+use Psr\Log;
+use RemotelyLiving\PHPQueryBus\Interfaces;
+use RemotelyLiving\PHPQueryBus\Enums;
+use RemotelyLiving\PHPQueryBus\Traits;
 
-final class PerfBudgetLogger implements \Psr\Log\LoggerAwareInterface
+final class PerfBudgetLogger implements Log\LoggerAwareInterface
 {
-    use Logger;
+    use Traits\Logger;
 
-    /**
-     * @var int
-     */
-    private $thresholdSeconds;
+    private int $thresholdSeconds;
 
-    /**
-     * @var float
-     */
-    private $thresholdMemoryMB;
+    private float $thresholdMemoryMB;
 
-    /**
-     * @var \RemotelyLiving\PHPQueryBus\Enums\LogLevel
-     */
-    private $logLevel;
+    private Enums\LogLevel $logLevel;
 
-    public function __construct(int $thresholdSeconds = 10, float $thresholdMemoryMB = 10.0, LogLevel $logLevel = null)
-    {
+    public function __construct(
+        int $thresholdSeconds = 10,
+        float $thresholdMemoryMB = 10.0,
+        Enums\LogLevel $logLevel = null
+    ) {
         $this->thresholdSeconds = $thresholdSeconds;
         $this->thresholdMemoryMB = $thresholdMemoryMB;
-        $this->logLevel = $logLevel ?? LogLevel::WARNING();
+        $this->logLevel = $logLevel ?? Enums\LogLevel::WARNING();
     }
 
-    public function __invoke(Query $query, callable $next): Result
+    public function __invoke(Interfaces\Query $query, callable $next): Interfaces\Result
     {
         $startTime = microtime(true);
         $startMemoryBytes = memory_get_usage(true);
