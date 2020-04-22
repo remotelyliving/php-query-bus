@@ -17,7 +17,7 @@ class QueryLoggerTest extends AbstractTestCase
 
     private Interfaces\LoggableQuery $loggableQuery;
 
-    private Interfaces\Query $nonLoggableQuery;
+    private object $nonLoggableQuery;
 
     private Interfaces\Result $result;
 

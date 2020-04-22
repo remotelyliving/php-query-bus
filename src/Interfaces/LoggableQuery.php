@@ -6,7 +6,7 @@ namespace RemotelyLiving\PHPQueryBus\Interfaces;
 
 use RemotelyLiving\PHPQueryBus\Enums\LogLevel;
 
-interface LoggableQuery extends Query
+interface LoggableQuery
 {
     public function getLogContext(): array;
 

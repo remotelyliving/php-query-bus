@@ -9,7 +9,7 @@ interface Resolver
     /**
      * @throws \RemotelyLiving\PHPQueryBus\Exceptions\OutOfBounds
      */
-    public function resolve(Query $query): Handler;
+    public function resolve(object $query): Handler;
 
     public function pushHandler(string $queryClass, Handler $handler): self;
 

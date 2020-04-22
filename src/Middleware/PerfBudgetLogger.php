@@ -29,7 +29,7 @@ final class PerfBudgetLogger implements Log\LoggerAwareInterface
         $this->logLevel = $logLevel ?? Enums\LogLevel::WARNING();
     }
 
-    public function __invoke(Interfaces\Query $query, callable $next): Interfaces\Result
+    public function __invoke(object $query, callable $next): Interfaces\Result
     {
         $startTime = microtime(true);
         $startMemoryBytes = memory_get_usage(true);

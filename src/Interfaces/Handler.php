@@ -6,5 +6,5 @@ namespace RemotelyLiving\PHPQueryBus\Interfaces;
 
 interface Handler
 {
-    public function handle(Query $query, QueryBus $bus): Result;
+    public function handle(object $query, QueryBus $bus): Result;
 }

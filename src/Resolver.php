@@ -32,7 +32,7 @@ final class Resolver implements Interfaces\Resolver
         return new static($container);
     }
 
-    public function resolve(Interfaces\Query $query): Interfaces\Handler
+    public function resolve(object $query): Interfaces\Handler
     {
         $queryClass = get_class($query);
 

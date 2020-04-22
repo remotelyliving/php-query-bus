@@ -20,7 +20,7 @@ class QueryCacherTest extends AbstractTestCase
 
     private Interfaces\CacheableQuery $cacheableQuery;
 
-    private Interfaces\Query $nonCacheableQuery;
+    private object $nonCacheableQuery;
 
     private Interfaces\Result $result;
 

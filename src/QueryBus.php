@@ -30,21 +30,21 @@ final class QueryBus implements Interfaces\QueryBus
     {
         $next = $this->callStack;
 
-        $this->callStack = function (Interfaces\Query $query) use ($middleware, $next): Interfaces\Result {
+        $this->callStack = function (object $query) use ($middleware, $next): Interfaces\Result {
             return $middleware($query, $next);
         };
 
         return $this;
     }
 
-    public function handle(Interfaces\Query $query): Interfaces\Result
+    public function handle(object $query): Interfaces\Result
     {
         return ($this->callStack)($query);
     }
 
     private function seedCallStack(): callable
     {
-        return function (Interfaces\Query $query): Interfaces\Result {
+        return function (object $query): Interfaces\Result {
             return $this->resolver->resolve($query)->handle($query, $this);
         };
     }

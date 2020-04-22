@@ -8,7 +8,7 @@ use RemotelyLiving\PHPQueryBus\Interfaces;
 
 class GetUserHandler implements Interfaces\Handler
 {
-    public function handle(Interfaces\Query $query, Interfaces\QueryBus $bus): Interfaces\Result
+    public function handle(object $query, Interfaces\QueryBus $bus): Interfaces\Result
     {
         $user = new \stdClass();
         $user->id = $query->getUserId();

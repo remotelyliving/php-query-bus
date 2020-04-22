@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace RemotelyLiving\PHPQueryBus\Tests\Stubs;
 
-use RemotelyLiving\PHPQueryBus\Interfaces;
-
-class GetUserQuery implements Interfaces\Query
+class GetUserQuery
 {
     private bool $shouldGetProfile = false;
 

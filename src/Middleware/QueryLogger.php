@@ -12,7 +12,7 @@ final class QueryLogger implements Log\LoggerAwareInterface
 {
     use Traits\Logger;
 
-    public function __invoke(Interfaces\Query $query, callable $next): Interfaces\Result
+    public function __invoke(object $query, callable $next): Interfaces\Result
     {
         if ($query instanceof Interfaces\LoggableQuery) {
             $this->getLogger()->log((string) $query->getLogLevel(), $query->getLogMessage(), $query->getLogContext());

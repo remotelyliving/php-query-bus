@@ -16,7 +16,7 @@ class QueryBusTest extends AbstractTestCase
 
     private Interfaces\Result $result;
 
-    private Interfaces\Query $query;
+    private object $query;
 
     private Interfaces\Handler $handler;
 
@@ -26,7 +26,7 @@ class QueryBusTest extends AbstractTestCase
         $this->queryBus = QueryBus::create($this->resolver);
         $this->result = new class extends AbstractResult {
         };
-        $this->query = new class implements Interfaces\Query {
+        $this->query = new class {
         };
         $this->handler = new class ($this->result) implements Interfaces\Handler {
             private Interfaces\Result $expectedResult;
@@ -36,7 +36,7 @@ class QueryBusTest extends AbstractTestCase
                 $this->expectedResult = $result;
             }
 
-            public function handle(Interfaces\Query $query, Interfaces\QueryBus $bus): Interfaces\Result
+            public function handle(object $query, Interfaces\QueryBus $bus): Interfaces\Result
             {
                 return $this->expectedResult;
             }
@@ -61,17 +61,17 @@ class QueryBusTest extends AbstractTestCase
 
         $calledMiddleware = [];
 
-        $middleware1 = function (Interfaces\Query $query, callable $next) use (&$calledMiddleware) {
+        $middleware1 = function (object $query, callable $next) use (&$calledMiddleware) {
             $calledMiddleware[] = 'middleware1';
             return $next($query);
         };
 
-        $middleware2 = function (Interfaces\Query $query, callable $next) use (&$calledMiddleware) {
+        $middleware2 = function (object $query, callable $next) use (&$calledMiddleware) {
             $calledMiddleware[] = 'middleware2';
             return $next($query);
         };
 
-        $middleware3 = function (Interfaces\Query $query, callable $next) use (&$calledMiddleware) {
+        $middleware3 = function (object $query, callable $next) use (&$calledMiddleware) {
             $calledMiddleware[] = 'middleware3';
             return $next($query);
         };

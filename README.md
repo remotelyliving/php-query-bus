@@ -28,8 +28,8 @@ The resolver can have handlers added manually or locate them in a PSR-11 Service
 Queries are mapped 1:1 with a handler and are mapped by the Query class name as the lookup key.
 ```php
 $resolver = Resolver::create($serviceContainer) // can locate in service container
-    ->pushHandler(MyQueryHandler1::class, new MyQueryHandler1()) // can locate in a local map
-    ->pushHandlerDeferred(MyQueryHandler2::class, $lazyCreateMethod); // can locate deferred to save un unnecessary object creation
+    ->pushHandler(GetUserProfileQuery::class, new GetUserProfileHandler()) // can locate in a local map {query => handler}
+    ->pushHandlerDeferred(GetUserQuery::class, $lazyCreateMethod); // can locate deferred to save un unnecessary object instantiation
 
 ```
 
@@ -40,8 +40,8 @@ The Query Bus takes in a Query Resolver and pushes whatever Middleware you want 
 $queryBus = QueryBus::create($resolver)
     ->pushMiddleware($myMiddleware1);
 
-$query = new MyQuery1('id');
-$result = $queryBus->handle($result);
+$query = new GetUserProfile('id');
+$result = $queryBus->handle($query);
 ```
 
 Middleware is any callable that returns a Result. Some base middleware is included: [src/Middleware](https://github.com/remotelyliving/php-query-bus/tree/master/src/Middleware)
@@ -50,13 +50,13 @@ That's really all there is to it!
 
 ### Query
 
-The DTO's for this library are left intentionally unimplemented. They are just interfaces to implement.
+The Query for this library is left intentionally unimplemented. It is just an object.
 My suggestion for Query objects is to keep them as a DTO of what you need to query your data source by. 
 
 An example query might look like this:
 
 ```php
-class GetUserQuery implements Interfaces\Query
+class GetUserQuery
 {
     private bool $shouldIncludeProfile = false;
 
@@ -88,7 +88,7 @@ The Result is similarly unimplemented except for the provided [AbstractResult](h
 Results can have their own custom getters for your use case. An example Result for the `GetUserQuery` above might look like:
 
 ```php
-class GetUserResult extends \RemotelyLiving\PHPQueryBus\AbstractResult implements \JsonSerializable
+class GetUserResult extends AbstractResult implements \JsonSerializable
 {
     private User $user;
 
@@ -131,13 +131,13 @@ Going with our GetUserQuery example, a Handler could look like:
 ```php
 class GetUserHandler implements Interfaces\Handler
 {
-    public function handle(Interfaces\Query $query, Interfaces\QueryBus $bus): Interfaces\Result
+    public function handle(object $query, Interfaces\QueryBus $bus): Interfaces\Result
     {
         try {
             $user = $this->userRepository->getUserById($query->getUserId());
         } catch (ConnectectionError $e) {
             // can handle exceptions without blowing up and instead use messaging via
-            // AbstractResult::getErrors() and AbstractResultHasErrors()
+            // AbstractResult::getErrors(): \Throwable[] and AbstractResult::hasErrors(): bool
             return AbstractResult::withErrors($e);
         }
 
@@ -170,7 +170,7 @@ A Middleware must return an instance of Result and be callable. That's it!
 An example Middleware could be as simple as this:
 
 ```php
-$cachingMiddleware = function (Interfaces\Query $query, callable $next) use ($queryCacher) : Interfaces\Result {
+$cachingMiddleware = function (object $query, callable $next) use ($queryCacher) : Interfaces\Result {
     if ($query instanceof Interfaces\CacheableQuery) {
         return $queryCacher->get($query, function () use ($next, $query) { return $next($query); });
     }
@@ -182,10 +182,10 @@ $cachingMiddleware = function (Interfaces\Query $query, callable $next) use ($qu
 #### [QueryCacher](https://github.com/remotelyliving/php-query-bus/blob/master/src/Middleware/QueryCacher.php)
 This middleware provides some interesting query caching by utilizing [Probabilistic Early Cache Expiry](https://en.wikipedia.org/wiki/Cache_stampede#Probabilistic_early_expiration)
 to help prevent cache stampedes. To be cached, a Query must implement the [CacheableQuery](https://github.com/remotelyliving/php-query-bus/blob/master/src/Interfaces/CacheableQuery.php) interface.
-To recompute cache simply fire off a Query with the value of `CacheableQuery::shouldReloadResult()` returning true.
+To recompute cache simply fire off a Query with the value of `CacheableQuery::shouldRecomputeResult()` returning true.
 
 #### [QueryLogger](https://github.com/remotelyliving/php-query-bus/blob/master/src/Middleware/QueryLogger.php)
-Helpful for debugging, but best left for dev and stage environments.
+Helpful for debugging, but best left for dev and stage environments. Looks for the LoggableQuery marker interface on the query
 
 #### [ResultErrorLogger](https://github.com/remotelyliving/php-query-bus/blob/master/src/Middleware/ResultErrorLogger.php)
 Helpful for debugging and alerting based on your logging setup.

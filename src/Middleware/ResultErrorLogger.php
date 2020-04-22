@@ -12,7 +12,7 @@ final class ResultErrorLogger implements Log\LoggerAwareInterface
 {
     use Traits\Logger;
 
-    public function __invoke(Interfaces\Query $query, callable $next): Interfaces\Result
+    public function __invoke(object $query, callable $next): Interfaces\Result
     {
         /** @var \RemotelyLiving\PHPQueryBus\Interfaces\Result $result */
         $result = $next($query);

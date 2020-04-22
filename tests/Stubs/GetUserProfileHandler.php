@@ -12,7 +12,7 @@ class GetUserProfileHandler implements Interfaces\Handler
     public const PREFERENCES = ['foo' => 'bar'];
     public const USERNAME = 'christian.thomas';
 
-    public function handle(Interfaces\Query $query, Interfaces\QueryBus $bus): Interfaces\Result
+    public function handle(object $query, Interfaces\QueryBus $bus): Interfaces\Result
     {
         if ($query->shouldHandlerReturnWithErrors()) {
             return AbstractResult::withErrors(
